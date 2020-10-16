@@ -101,7 +101,6 @@ def update_bill(bill):
         try:
             raw_text = func(data, metadata)
         except Exception as e:
-            raise
             click.secho(f"exception processing {metadata['url']}: {e}", fg="red")
 
         # TODO: clean up whitespace
