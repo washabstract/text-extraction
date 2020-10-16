@@ -1,7 +1,10 @@
 import re
+import lxml
+import urllib.parse as urlparse
+from urllib.parse import parse_qs
 import tempfile
 import textract
-
+from extract import SCRAPER
 from .utils import (
     pdfdata_to_text,
     text_after_line_numbers,
@@ -24,6 +27,53 @@ def extract_line_numbered_pdf(data, metadata):
 
 def extract_line_post_numbered_pdf(data, metadata):
     return text_before_line_numbers(pdfdata_to_text(data))
+
+
+def extract_ca_sometimes_numbered_pdf(data, metadata):
+    """
+    A few states have bills both with numbered lines and without.
+    In these cases, we need to look at the start of the lines
+    to determine which extraction function to use.
+
+    In addition, CA requires an extra route call in order to get the actual PDF.
+    This is done by getting a session token and making a new request.
+    """
+
+    # Data is the first CA HTML request content
+    # metadata is the version
+    # get and parse the initial CA page
+    doc = lxml.html.fromstring(data)
+    parsed = urlparse.urlparse(metadata["url"])
+    bill_id = parse_qs(parsed.query)["bill_id"][0]
+    bill_version = parse_qs(parsed.query)["version"][0]
+
+    # Get pdf_link2, view_state, and other params
+    pdf_link = doc.get_element_by_id("pdf_link2").name
+    view_state = doc.get_element_by_id("j_id1:javax.faces.ViewState:0").value
+    download_form_obj = doc.get_element_by_id("downloadForm")
+    download_form_action = download_form_obj.action
+    base_url = "https://leginfo.legislature.ca.gov"
+
+    # Construct the second request body and headers
+    req_body = {
+        "downloadForm": "downloadForm",
+        "javax.faces.ViewState": view_state,
+        "pdf_link2": pdf_link,
+        "bill_id": bill_id,
+        "version": bill_version,
+    }
+
+    second_req_headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
+        "image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+    }
+
+    metadata["url"] = base_url + download_form_action
+    # Send request and save second request as temp.pdf
+    ca_content = SCRAPER.post(metadata["url"], data=req_body, headers=second_req_headers)
+
+    return extract_sometimes_numbered_pdf(ca_content.content, metadata)
 
 
 def extract_sometimes_numbered_pdf(data, metadata):

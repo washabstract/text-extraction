@@ -3,29 +3,13 @@ import os
 import sys
 import csv
 import math
-import warnings
 import click
-import scrapelib
 from django.contrib.postgres.search import SearchVector
 from django.db import transaction
 from django.db.models import Count
 from openstates.utils.django import init_django
-from extract.utils import jid_to_abbr, abbr_to_jid
-from extract import get_extract_func, DoNotDownload, CONVERSION_FUNCTIONS
-
-# disable SSL validation and ignore warnings
-scraper = scrapelib.Scraper(verify=False)
-scraper.user_agent = "Mozilla"
-warnings.filterwarnings("ignore", module="urllib3")
-
-
-MIMETYPES = {
-    "application/pdf": "pdf",
-    "text/html": "html",
-    "application/msword": "doc",
-    "application/rtf": "rtf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-}
+from extract import get_extract_func, DoNotDownload, CONVERSION_FUNCTIONS, SCRAPER
+from extract.utils import abbr_to_jid, get_filename
 
 
 def _cleanup(text):
@@ -33,19 +17,15 @@ def _cleanup(text):
     return text.replace("\0", "")
 
 
-def download(version):
-    abbr = jid_to_abbr(version["jurisdiction_id"])
-    ext = MIMETYPES[version["media_type"]]
-    filename = f'raw/{abbr}/{version["session"]}-{version["identifier"]}-{version["note"]}.{ext}'
-    filename.replace("#", "__")
-
+def download(version, **kwargs):
+    filename = get_filename(version)
     if not os.path.exists(filename):
         try:
             os.makedirs(os.path.dirname(filename))
         except OSError:
             pass
         try:
-            _, resp = scraper.urlretrieve(version["url"], filename)
+            _, resp = SCRAPER.urlretrieve(version["url"], filename, **kwargs)
         except Exception:
             click.secho("could not fetch " + version["url"], fg="yellow")
             return None, None
@@ -106,17 +86,22 @@ def update_bill(bill):
             "media_type": link.media_type,
             "title": bill.title,
             "jurisdiction_id": bill.legislative_session.jurisdiction_id,
+            "session": bill.legislative_session.identifier,
+            "note": "",
+            "identifier": bill.identifier,
         }
         func = get_extract_func(metadata)
         if func == DoNotDownload:
             continue
         try:
-            data = scraper.get(link.url).content
+            data = SCRAPER.get(link.url).content
+
         except Exception:
             continue
         try:
             raw_text = func(data, metadata)
         except Exception as e:
+            raise
             click.secho(f"exception processing {metadata['url']}: {e}", fg="red")
 
         # TODO: clean up whitespace

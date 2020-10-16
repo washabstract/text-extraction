@@ -1,3 +1,6 @@
+import scrapelib
+import warnings
+
 from .utils import jid_to_abbr
 from .common import (
     extract_simple_pdf,
@@ -5,6 +8,7 @@ from .common import (
     extract_line_post_numbered_pdf,
     extract_pre_tag_html,
     extract_sometimes_numbered_pdf,
+    extract_ca_sometimes_numbered_pdf,
     extract_from_p_tags_html,
     extractor_for_elements_by_class,
     extractor_for_element_by_id,
@@ -13,6 +17,13 @@ from .common import (
     textract_extractor,
 )
 from .de import handle_delaware
+
+global SCRAPER
+SCRAPER = scrapelib.Scraper(verify=False)
+SCRAPER.user_agent = "Mozilla"
+warnings.filterwarnings("ignore", module="urllib3")
+
+# disable SSL validation and ignore warnings
 
 
 class DoNotDownload:
@@ -30,9 +41,10 @@ CONVERSION_FUNCTIONS = {
     },
     "ar": {"application/pdf": extract_sometimes_numbered_pdf},
     "ca": {
+        "application/pdf": extract_ca_sometimes_numbered_pdf,
         "text/html": extractor_for_element_by_xpath(
             './/div[@id="bill"] | .//span[@class="Resolution"]'
-        )
+        ),
     },
     "co": {"application/pdf": extract_sometimes_numbered_pdf},
     "ct": {"text/html": extract_from_p_tags_html, "application/pdf": DoNotDownload},

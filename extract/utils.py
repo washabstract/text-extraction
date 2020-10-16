@@ -5,6 +5,22 @@ import subprocess
 
 from lxml import html
 
+MIMETYPES = {
+    "application/pdf": "pdf",
+    "text/html": "html",
+    "application/msword": "doc",
+    "application/rtf": "rtf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+}
+
+
+def get_filename(version):
+    abbr = jid_to_abbr(version["jurisdiction_id"])
+    ext = MIMETYPES[version["media_type"]]
+    filename = f'raw/{abbr}/{version["session"]}-{version["identifier"]}-{version["note"]}.{ext}'
+    filename.replace("#", "__")
+    return filename
+
 
 def jid_to_abbr(j):
     return j.split(":")[-1].split("/")[0]
