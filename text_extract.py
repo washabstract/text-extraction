@@ -42,7 +42,7 @@ def extract_to_file(filename, data, version):
         if func == DoNotDownload:
             return DoNotDownload, 0
         else:
-            text = func(data, version)
+            text = func(data, version, write_to_file=True)
     except Exception as e:
         click.secho(f"exception processing {version['url']}: {e}", fg="red")
         text = None

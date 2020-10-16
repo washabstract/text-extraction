@@ -17,7 +17,10 @@ MIMETYPES = {
 def get_filename(version):
     abbr = jid_to_abbr(version["jurisdiction_id"])
     ext = MIMETYPES[version["media_type"]]
-    filename = f'raw/{abbr}/{version["session"]}-{version["identifier"]}-{version["note"]}.{ext}'
+    filename = (
+        f'raw/{abbr}/{version["session"]}-{version["identifier"]}-'
+        + f'{version["note"].replace("/","-")}.{ext}'
+    )
     filename.replace("#", "__")
     return filename
 

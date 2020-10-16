@@ -1,6 +1,3 @@
-import scrapelib
-import warnings
-
 from .utils import jid_to_abbr
 from .common import (
     extract_simple_pdf,
@@ -17,13 +14,6 @@ from .common import (
     textract_extractor,
 )
 from .de import handle_delaware
-
-global SCRAPER
-SCRAPER = scrapelib.Scraper(verify=False)
-SCRAPER.user_agent = "Mozilla"
-warnings.filterwarnings("ignore", module="urllib3")
-
-# disable SSL validation and ignore warnings
 
 
 class DoNotDownload:
