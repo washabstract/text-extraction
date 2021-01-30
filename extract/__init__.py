@@ -1,3 +1,5 @@
+import scrapelib
+
 from .utils import jid_to_abbr
 from .common import (
     extract_simple_pdf,
@@ -18,6 +20,13 @@ from .de import handle_delaware
 
 class DoNotDownload:
     """ Sentinel to indicate that nothing should be downloaded """
+
+
+global SCRAPER
+SCRAPER = scrapelib.Scraper(verify=False)
+SCRAPER.user_agent = "Mozilla"
+
+# disable SSL validation and ignore warnings
 
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
