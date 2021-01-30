@@ -3,6 +3,7 @@ import tempfile
 import functools
 import subprocess
 
+import lxml
 from lxml import html
 
 MIMETYPES = {
@@ -11,6 +12,7 @@ MIMETYPES = {
     "application/msword": "doc",
     "application/rtf": "rtf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "text/xml": "html",
 }
 
 
@@ -57,7 +59,7 @@ def clean(text):
     text = text.replace("\xa0", " ")  # nbsp -> sp
     text = text.replace("\r\n", "\n")  # replace carriage returns
     text = re.sub(r"[ \t]", " ", text)  # collapse spaces
-    # collapse newlines too?
+    text = re.sub(r"(\s*\n){2,}", "\n", text)  # Collapse multiple blank lines
     return text
 
 
@@ -80,6 +82,9 @@ text_before_line_numbers = functools.partial(_text_near_line_numbers, regex=r"(.
 
 
 def text_from_element_lxml(data, lxml_query):
+    parser = lxml.etree.XMLParser(remove_blank_text=True)
+    doc = lxml.etree.fromstring(data, parser=parser)
+    data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.findall(lxml_query)
 
@@ -93,6 +98,9 @@ def text_from_element_lxml(data, lxml_query):
 
 
 def text_from_element_xpath(data, lxml_xpath_query):
+    parser = lxml.etree.XMLParser(remove_blank_text=True)
+    doc = lxml.etree.fromstring(data, parser=parser)
+    data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.xpath(lxml_xpath_query)
 
@@ -106,6 +114,9 @@ def text_from_element_xpath(data, lxml_xpath_query):
 
 
 def text_from_element_siblings_lxml(data, lxml_query):
+    parser = lxml.etree.XMLParser(remove_blank_text=True)
+    doc = lxml.etree.fromstring(data, parser=parser)
+    data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.findall(lxml_query)
 
@@ -117,6 +128,9 @@ def text_from_element_siblings_lxml(data, lxml_query):
 
 
 def text_from_element_siblings_xpath(data, lxml_query):
+    parser = lxml.etree.XMLParser(remove_blank_text=True)
+    doc = lxml.etree.fromstring(data, parser=parser)
+    data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.xpath(lxml_query)
 

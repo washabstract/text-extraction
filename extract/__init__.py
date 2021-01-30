@@ -12,7 +12,6 @@ from .common import (
     extractor_for_elements_by_class,
     extractor_for_element_by_id,
     extractor_for_element_by_xpath,
-    extract_from_code_tags_html,
     textract_extractor,
 )
 from .de import handle_delaware
@@ -25,8 +24,6 @@ class DoNotDownload:
 global SCRAPER
 SCRAPER = scrapelib.Scraper(verify=False)
 SCRAPER.user_agent = "Mozilla"
-
-# disable SSL validation and ignore warnings
 
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -63,7 +60,8 @@ CONVERSION_FUNCTIONS = {
     },
     "ia": {"application/pdf": extract_line_numbered_pdf, "text/html": DoNotDownload},
     "id": {"application/pdf": extract_line_numbered_pdf},
-    "il": {"text/html": extract_from_code_tags_html},
+    # "il": {"text/html": extract_from_code_tags_html},
+    "il": {"text/html": extract_pre_tag_html},
     "in": {"application/pdf": extract_sometimes_numbered_pdf},
     "ks": {"application/pdf": extract_sometimes_numbered_pdf},
     "ky": {"application/pdf": extract_line_numbered_pdf},
@@ -102,6 +100,7 @@ CONVERSION_FUNCTIONS = {
     "sd": {"text/html": extractor_for_elements_by_class("fullContent")},
     "tn": {"application/pdf": extract_simple_pdf},
     "ut": {"application/pdf": extract_line_numbered_pdf},
+    "us": {"text/xml": extractor_for_element_by_xpath("//html")},
     "pr": {
         "application/msword": textract_extractor(extension="doc"),
         DOCX_MIMETYPE: textract_extractor(extension="docx"),
@@ -129,5 +128,5 @@ def get_extract_func(metadata):
         func = CONVERSION_FUNCTIONS[state][metadata["media_type"]]
     except KeyError:
         print(f"no function for {state}, {metadata['media_type']}")
-        return lambda data, metadata: ""
+        return lambda data, metadata, **kwargs: ""
     return func
