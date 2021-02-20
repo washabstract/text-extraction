@@ -100,7 +100,10 @@ CONVERSION_FUNCTIONS = {
     "sd": {"text/html": extractor_for_elements_by_class("fullContent")},
     "tn": {"application/pdf": extract_simple_pdf},
     "ut": {"application/pdf": extract_line_numbered_pdf},
-    "us": {"text/xml": extractor_for_element_by_xpath("//html")},
+    "us": {
+        "text/xml": extractor_for_element_by_xpath("//html"),
+        "application/pdf": extract_sometimes_numbered_pdf,
+    },
     "pr": {
         "application/msword": textract_extractor(extension="doc"),
         DOCX_MIMETYPE: textract_extractor(extension="docx"),
@@ -112,7 +115,10 @@ CONVERSION_FUNCTIONS = {
     },
     "ri": {"application/pdf": extract_sometimes_numbered_pdf},
     # aggressive, but the Washington & Texas HTML are both basically bare
-    "tx": {"text/html": extractor_for_element_by_xpath("//html")},
+    "tx": {
+        "text/html": extractor_for_element_by_xpath("//html"),
+        "application/pdf": extract_sometimes_numbered_pdf,
+    },
     "va": {"text/html": extractor_for_element_by_id("mainC")},
     "vt": {"application/pdf": extract_sometimes_numbered_pdf},
     "wa": {"text/html": extractor_for_element_by_xpath("//html")},

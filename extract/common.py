@@ -48,21 +48,27 @@ def extract_ca_sometimes_numbered_pdf(data, metadata, **kwargs):
     This is done by getting a session token and making a new request.
     """
 
-    write_to_file = kwargs.get("write_to_file")
+    write_to_file = kwargs.get("write_to_file", True)
 
     # Data is the first CA HTML request content
     # metadata is the version
     # get and parse the initial CA page
-    doc = lxml.html.fromstring(data)
+    # print(data)
     parsed = urlparse.urlparse(metadata["url"])
     bill_id = parse_qs(parsed.query)["bill_id"][0]
     bill_version = parse_qs(parsed.query)["version"][0]
 
     # Get pdf_link2, view_state, and other params
+
+    # bfile = bytes(bytearray(data, encoding='utf-8'))
+    # doc = lxml.etree.XML(bfile)
+    # pdf_link = doc.findall('''.//*[@id='pdf_link2']''')[0].get('name')
+    # view_state = doc.findall('''.//*[@id='j_id1:javax.faces.ViewState:0']''')[0].get('value')
+    # download_form_action = doc.findall('''.//*[@id='downloadForm']''')[0].get('action')
+    doc = lxml.html.fromstring(data)
     pdf_link = doc.get_element_by_id("pdf_link2").name
     view_state = doc.get_element_by_id("j_id1:javax.faces.ViewState:0").value
-    download_form_obj = doc.get_element_by_id("downloadForm")
-    download_form_action = download_form_obj.action
+    download_form_action = doc.get_element_by_id("downloadForm").action
     base_url = "https://leginfo.legislature.ca.gov"
 
     # Construct the second request body and headers
@@ -83,13 +89,15 @@ def extract_ca_sometimes_numbered_pdf(data, metadata, **kwargs):
     metadata["url"] = base_url + download_form_action
     # Send request and save second request as temp.pdf
     ca_content = SCRAPER.post(metadata["url"], data=req_body, headers=second_req_headers)
+    assert ca_content.status_code == 200
 
     if write_to_file:
         raw_filename = get_filename(metadata)
         with open(raw_filename, "wb") as f:
             f.write(ca_content.content)
 
-    return extract_sometimes_numbered_pdf(ca_content.content, metadata)
+    text = extract_sometimes_numbered_pdf(ca_content.content, metadata)
+    return text
 
 
 def extract_sometimes_numbered_pdf(data, metadata, **kwargs):
