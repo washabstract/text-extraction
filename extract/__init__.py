@@ -11,6 +11,7 @@ from .common import (
     extractor_for_element_by_xpath,
     extract_from_code_tags_html,
     textract_extractor,
+    tx_txt_from_html
 )
 from .de import handle_delaware
 
@@ -102,7 +103,7 @@ CONVERSION_FUNCTIONS = {
     },
     "ri": {"application/pdf": extract_sometimes_numbered_pdf},
     # aggressive, but the Washington & Texas HTML are both basically bare
-    "tx": {"text/html": extractor_for_element_by_xpath("//html")},
+    "tx": {"text/html": tx_txt_from_html}, #, "application/pdf": extract_sometimes_numbered_pdf}, 
     "va": {"text/html": extractor_for_element_by_id("mainC")},
     "vt": {"application/pdf": extract_sometimes_numbered_pdf},
     "wa": {"text/html": extractor_for_element_by_xpath("//html")},

@@ -1,6 +1,7 @@
 import re
 import tempfile
 import textract
+from bs4 import BeautifulSoup as bs
 
 from .utils import (
     pdfdata_to_text,
@@ -124,6 +125,31 @@ def extract_from_code_tags_html(data, metadata):
     Some states (e.g. IL) have the bill text inside
     <code> tags (as it renders as fixed-width).
     """
-
     text = text_from_element_siblings_lxml(data, ".//code")
     return text
+
+
+def tx_txt_from_html(data, metadata):   
+    """Uses BeautifulSoup to extract text for TX HTML files.
+    """
+    whitespace_cleaner = re.compile(r'[\t\n](?=[\n\t])')
+    css_cleaner = re.compile(r'td { font-family: Courier, Arial, sans-serif; font-size: 10pt; } table { empty-cells:show; }')
+    
+    try:
+        soup = bs(data, 'html.parser')
+        t = whitespace_cleaner.sub('', soup.text) 
+        t = css_cleaner.sub('', t)
+        return t
+    
+    except UnicodeDecodeError:
+        return f'Unicode Decode Error on {metadata}'
+    
+    
+    
+    # else:
+    #     with open(data, 'r') as fin:
+    #         try:
+    #             soup = bs(fin, 'html.parser')
+    #             return re.sub(r'[\t\n](?=[\n\t])', '', soup.text)
+    #         except UnicodeDecodeError:
+    #             return f'Unicode Decode Error on {data}'
