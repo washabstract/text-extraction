@@ -14,6 +14,7 @@ from .utils import (
     clean,
 )
 
+# print(version('bs4'))
 
 def extract_simple_pdf(data, metadata):
     return pdfdata_to_text(data)
@@ -134,22 +135,11 @@ def tx_txt_from_html(data, metadata):
     """
     whitespace_cleaner = re.compile(r'[\t\n](?=[\n\t])')
     css_cleaner = re.compile(r'td { font-family: Courier, Arial, sans-serif; font-size: 10pt; } table { empty-cells:show; }')
-    
-    try:
-        soup = bs(data, 'html.parser')
-        t = whitespace_cleaner.sub('', soup.text) 
-        t = css_cleaner.sub('', t)
-        return t
-    
-    except UnicodeDecodeError:
-        return f'Unicode Decode Error on {metadata}'
-    
-    
-    
-    # else:
-    #     with open(data, 'r') as fin:
-    #         try:
-    #             soup = bs(fin, 'html.parser')
-    #             return re.sub(r'[\t\n](?=[\n\t])', '', soup.text)
-    #         except UnicodeDecodeError:
-    #             return f'Unicode Decode Error on {data}'
+    html_cleaner = re.compile(r'<!?--.+>', flags=re.DOTALL)
+
+    soup = bs(data, 'html.parser')
+    t = whitespace_cleaner.sub('', soup.text) 
+    t = css_cleaner.sub('', t)
+    if "<" in t:
+        return html_cleaner.sub('',t)
+    return t

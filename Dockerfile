@@ -12,6 +12,8 @@ RUN apt update && apt install -y --no-install-recommends \
       antiword \
       tesseract-ocr
 
+RUN pip install beautifulsoup4==4.9.1
+
 ADD . /opt/text-extraction
 WORKDIR /opt/text-extraction
 RUN set -ex \
