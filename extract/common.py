@@ -14,7 +14,6 @@ from .utils import (
     clean,
 )
 
-# print(version('bs4'))
 
 def extract_simple_pdf(data, metadata):
     return pdfdata_to_text(data)
