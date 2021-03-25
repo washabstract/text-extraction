@@ -39,6 +39,9 @@ def clean(text):
     text = text.replace("\r\n", "\n")  # replace carriage returns
     text = re.sub(r"[ \t]", " ", text)  # collapse spaces
     # collapse newlines too?
+
+    # if text comes from CA:
+    text = re.sub(r"^\s?line *\d+",'')  # remove line numbers from CA
     return text
 
 
