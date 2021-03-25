@@ -41,7 +41,7 @@ def clean(text):
     # collapse newlines too?
 
     # if text comes from CA:
-    text = re.sub(r"^\s?line *\d+",'')  # remove line numbers from CA
+    text = re.sub(r"^\s?line *\d+",'', text)  # remove line numbers from CA
     return text
 
 
