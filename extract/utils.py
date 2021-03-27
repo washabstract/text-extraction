@@ -34,15 +34,12 @@ def pdfdata_to_text(data):
         return data.decode("utf8", "ignore")
 
 
-def clean(text):
-    text = text.replace("\xa0", " ")  # nbsp -> sp
-    text = text.replace("\r\n", "\n")  # replace carriage returns
-    text = re.sub(r"[ \t]", " ", text)  # collapse spaces
-    # collapse newlines too?
-
-    # if text comes from CA:
-    text = re.sub(r"^\s?line *\d+",'', text)  # remove line numbers from CA
-    return text
+# def clean(text):
+#     text = text.replace("\xa0", " ")  # nbsp -> sp
+#     text = text.replace("\r\n", "\n")  # replace carriage returns
+#     text = re.sub(r"[ \t]", " ", text)  # collapse spaces
+#     # collapse newlines too?
+#     return text
 
 
 def _text_near_line_numbers(lines, regex):

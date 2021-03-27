@@ -12,6 +12,7 @@ from django.db.models import Count
 from openstates.utils.django import init_django
 from extract.utils import jid_to_abbr, abbr_to_jid
 from extract import get_extract_func, DoNotDownload, CONVERSION_FUNCTIONS
+from sanitize import *
 
 # disable SSL validation and ignore warnings
 scraper = scrapelib.Scraper(verify=False)
@@ -56,13 +57,13 @@ def download(version):
             return filename, f.read()
 
 
-def extract_to_file(filename, data, version):
+def extract_to_file(filename, data, version, sanitizers=None):
     try:
         func = get_extract_func(version)
         if func == DoNotDownload:
             return DoNotDownload, 0
         else:
-            text = func(data, version)
+            text = clean(sanitizers, func(data, version))
     except Exception as e:
         click.secho(f"exception processing {version['url']}: {e}", fg="red")
         text = None
@@ -89,6 +90,9 @@ def update_bill(bill):
         links = latest_version.links.all()
     except IndexError:
         links = []
+
+    # Initialize sanitizers
+    sanitizers = get_sanitizers(bill.legislative_session.jurisdiction_id, is_jid=True)
 
     # check if there's an old entry and we can use it
     # if bill.searchable:
@@ -119,8 +123,8 @@ def update_bill(bill):
         except Exception as e:
             click.secho(f"exception processing {metadata['url']}: {e}", fg="red")
 
-        # TODO: clean up whitespace
-        raw_text = _cleanup(raw_text)
+        # clean up whitespace and run other sanitizers by state
+        raw_text = clean(sanitizers, raw_text)
 
         if raw_text:
             is_error = False
@@ -194,6 +198,10 @@ def sample(state, resample, quiet):
     if resample:
         _resample(state)
     count = missing = empty = skipped = 0
+
+    # Initialize sanitizers
+    sanitizers = get_sanitizers(state)
+
     with open(f"raw/{state}.csv") as f:
         for version in csv.DictReader(f):
             count += 1
@@ -201,7 +209,7 @@ def sample(state, resample, quiet):
             if not filename:
                 missing += 1
                 continue
-            text_filename, n_bytes = extract_to_file(filename, data, version)
+            text_filename, n_bytes = extract_to_file(filename, data, version, sanitizers)
             if text_filename == DoNotDownload:
                 skipped += 1
             elif not n_bytes:
