@@ -53,12 +53,12 @@ def get_sanitizers(state, is_jid=False):
     """
     sanitizers_by_state = {
         'ca' : [LineNumCleaner],
-        'tx' : [FontDefCleaner, TX_CSS_Cleaner]
+        'tx' : [FontDefCleaner, TexasCSSCleaner]
     }
 
     sanitizers_all = [
         NewlineCleaner,
-        NBSP_Cleaner,
+        NbspCleaner,
         CarriageReturnCleaner,
         SpaceCleaner
     ]
