@@ -19,7 +19,7 @@ class NewlineCleaner(Sanitizer):
     def __init__(self):
         self.re = re.compile(r"\n(?=\n)")
 
-class TX_CSS_Cleaner(Sanitizer):
+class TexasCSSCleaner(Sanitizer):
     """Removes the line of CSS from extracted TX text."""
     def __init__(self):
         self.re = re.compile(r"td { font-family: Courier, Arial, sans-serif; font-size: 10pt; }.*")
@@ -29,7 +29,7 @@ class FontDefCleaner(Sanitizer):
     def __init__(self):
         self.re = re.compile(r"<!?--.+>", flags=re.DOTALL)
 
-class NBSP_Cleaner(Sanitizer):
+class NbspCleaner(Sanitizer):
     """Replaces NBSP with SP"""
     def __init__(self):
         self.re = re.compile(r"\xa0")

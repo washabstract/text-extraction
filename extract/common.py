@@ -1,7 +1,6 @@
 import re
 import tempfile
 import textract
-from bs4 import BeautifulSoup as bs
 
 from .utils import (
     pdfdata_to_text,
