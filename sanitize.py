@@ -5,46 +5,46 @@ from extract.utils import jid_to_abbr
 class Sanitizer:
     """Abstract base class for sanitizing extracted text with pre-compiled regular expressions."""
     def __init__(self):
-        self.re = None
+        self.expr = None
     def sanitize(self, text):
-        return self.re.sub('', text)
+        return self.expr.sub('', text)
 
 class LineNumCleaner(Sanitizer):
     """Removes line numbers from extracted text."""
     def __init__(self):
-        self.re = re.compile(r"^ *line *\d+", flags=re.MULTILINE) 
+        self.expr = re.compile(r"^ *line *\d+", flags=re.MULTILINE) 
 
 class NewlineCleaner(Sanitizer):
     """Removes excessive newlines from extracted text."""
     def __init__(self):
-        self.re = re.compile(r"\n(?=\n)")
+        self.expr = re.compile(r"\n(?=\n)")
 
 class TexasCSSCleaner(Sanitizer):
     """Removes the line of CSS from extracted TX text."""
     def __init__(self):
-        self.re = re.compile(r"td { font-family: Courier, Arial, sans-serif; font-size: 10pt; }.*")
+        self.expr = re.compile(r"td { font-family: Courier, Arial, sans-serif; font-size: 10pt; }.*")
 
 class FontDefCleaner(Sanitizer):
     """Removes HTML font definitions from extracted TX text."""
     def __init__(self):
-        self.re = re.compile(r"<!?--.+>", flags=re.DOTALL)
+        self.expr = re.compile(r"<!?--.+>", flags=re.DOTALL)
 
 class NbspCleaner(Sanitizer):
     """Replaces NBSP with SP"""
     def __init__(self):
-        self.re = re.compile(r"\xa0")
+        self.expr = re.compile(r"\xa0")
     def sanitize(self, text):
-        return self.re.sub(' ', text)
+        return self.expr.sub(' ', text)
 
 class CarriageReturnCleaner(Sanitizer):
     """Removes carriage returns from extracted text."""
     def __init__(self):
-        self.re = re.compile(r"\r(?=\n)", flags=re.DOTALL)
+        self.expr = re.compile(r"\r(?=\n)", flags=re.DOTALL)
 
 class SpaceCleaner(Sanitizer):
     """Collapses spaces in extracted text."""
     def __init__(self):
-        self.re = re.compile(r"\t(?<= )")
+        self.expr = re.compile(r"\t(?<= )")
 
 
 def get_sanitizers(state, is_jid=False):
