@@ -157,7 +157,7 @@ def extractor_for_element_by_id(bill_text_element_id):
 def extractor_for_element_by_selector(bill_text_element_selector):
     def _my_extractor(data, metadata, **kwargs):
         text_inside_matching_tag = text_from_element_lxml(data, bill_text_element_selector)
-        return clean(text_inside_matching_tag)
+        return text_inside_matching_tag
 
     return _my_extractor
 
@@ -165,7 +165,7 @@ def extractor_for_element_by_selector(bill_text_element_selector):
 def extractor_for_element_by_xpath(bill_text_element_selector):
     def _my_extractor(data, metadata, **kwargs):
         text_inside_matching_tag = text_from_element_xpath(data, bill_text_element_selector)
-        return clean(text_inside_matching_tag)
+        return text_inside_matching_tag
 
     return _my_extractor
 
@@ -175,7 +175,7 @@ def extractor_for_elements_by_xpath(bill_text_element_selector):
         text_inside_matching_tag = text_from_element_siblings_xpath(
             data, bill_text_element_selector
         )
-        return clean(text_inside_matching_tag)
+        return text_inside_matching_tag
 
     return _my_extractor
 
@@ -198,6 +198,6 @@ def extract_from_code_tags_html(data, metadata, **kwargs):
     Some states (e.g. IL) have the bill text inside
     <code> tags (as it renders as fixed-width).
     """
-
     text = text_from_element_siblings_lxml(data, ".//code")
     return text
+

@@ -63,6 +63,7 @@ def clean(text):
     return text
 
 
+
 def _text_near_line_numbers(lines, regex):
     """ used for before & after line numbers """
     text = []

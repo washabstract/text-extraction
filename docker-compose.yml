@@ -3,7 +3,6 @@ version: "3.5"
 networks:
   openstates-network:
       name: openstates-network
-
 services:
   text-extract:
     build: .
@@ -14,3 +13,4 @@ services:
     entrypoint: ["poetry", "run", "python", "./text_extract.py"]
     networks:
     - openstates-network
+ 
