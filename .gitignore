@@ -4,3 +4,4 @@ raw/
 text/
 .DS_Store
 .python-version
+*.csv

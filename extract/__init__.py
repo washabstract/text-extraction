@@ -1,3 +1,5 @@
+import scrapelib
+
 from .utils import jid_to_abbr
 from .common import (
     extract_simple_pdf,
@@ -5,11 +7,11 @@ from .common import (
     extract_line_post_numbered_pdf,
     extract_pre_tag_html,
     extract_sometimes_numbered_pdf,
+    extract_ca_sometimes_numbered_pdf,
     extract_from_p_tags_html,
     extractor_for_elements_by_class,
     extractor_for_element_by_id,
     extractor_for_element_by_xpath,
-    extract_from_code_tags_html,
     textract_extractor,
 )
 from .de import handle_delaware
@@ -17,6 +19,11 @@ from .de import handle_delaware
 
 class DoNotDownload:
     """ Sentinel to indicate that nothing should be downloaded """
+
+
+global SCRAPER
+SCRAPER = scrapelib.Scraper(verify=False)
+SCRAPER.user_agent = "Mozilla"
 
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -30,9 +37,10 @@ CONVERSION_FUNCTIONS = {
     },
     "ar": {"application/pdf": extract_sometimes_numbered_pdf},
     "ca": {
+        "application/pdf": extract_ca_sometimes_numbered_pdf,
         "text/html": extractor_for_element_by_xpath(
             './/div[@id="bill"] | .//span[@class="Resolution"]'
-        )
+        ),
     },
     "co": {"application/pdf": extract_sometimes_numbered_pdf},
     "ct": {"text/html": extract_from_p_tags_html, "application/pdf": DoNotDownload},
@@ -52,7 +60,8 @@ CONVERSION_FUNCTIONS = {
     },
     "ia": {"application/pdf": extract_line_numbered_pdf, "text/html": DoNotDownload},
     "id": {"application/pdf": extract_line_numbered_pdf},
-    "il": {"text/html": extract_from_code_tags_html},
+    # "il": {"text/html": extract_from_code_tags_html},
+    "il": {"text/html": extract_pre_tag_html},
     "in": {"application/pdf": extract_sometimes_numbered_pdf},
     "ks": {"application/pdf": extract_sometimes_numbered_pdf},
     "ky": {"application/pdf": extract_line_numbered_pdf},
@@ -91,6 +100,10 @@ CONVERSION_FUNCTIONS = {
     "sd": {"text/html": extractor_for_elements_by_class("fullContent")},
     "tn": {"application/pdf": extract_simple_pdf},
     "ut": {"application/pdf": extract_line_numbered_pdf},
+    "us": {
+        "text/xml": extractor_for_element_by_xpath("//html"),
+        "application/pdf": extract_sometimes_numbered_pdf,
+    },
     "pr": {
         "application/msword": textract_extractor(extension="doc"),
         DOCX_MIMETYPE: textract_extractor(extension="docx"),
@@ -102,7 +115,10 @@ CONVERSION_FUNCTIONS = {
     },
     "ri": {"application/pdf": extract_sometimes_numbered_pdf},
     # aggressive, but the Washington & Texas HTML are both basically bare
-    "tx": {"text/html": extractor_for_element_by_xpath("//html")},
+    "tx": {
+        "text/html": extractor_for_element_by_xpath("//html"),
+        "application/pdf": extract_sometimes_numbered_pdf,
+    },
     "va": {"text/html": extractor_for_element_by_id("mainC")},
     "vt": {"application/pdf": extract_sometimes_numbered_pdf},
     "wa": {"text/html": extractor_for_element_by_xpath("//html")},
@@ -118,5 +134,5 @@ def get_extract_func(metadata):
         func = CONVERSION_FUNCTIONS[state][metadata["media_type"]]
     except KeyError:
         print(f"no function for {state}, {metadata['media_type']}")
-        return lambda data, metadata: ""
+        return lambda data, metadata, **kwargs: ""
     return func

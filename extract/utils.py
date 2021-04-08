@@ -3,7 +3,28 @@ import tempfile
 import functools
 import subprocess
 
+import lxml
 from lxml import html
+
+MIMETYPES = {
+    "application/pdf": "pdf",
+    "text/html": "html",
+    "application/msword": "doc",
+    "application/rtf": "rtf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "text/xml": "html",
+}
+
+
+def get_filename(version):
+    abbr = jid_to_abbr(version["jurisdiction_id"])
+    ext = MIMETYPES[version["media_type"]]
+    filename = (
+        f'raw/{abbr}/{version["session"]}-{version["identifier"]}-'
+        + f'{version["note"].replace("/","-")}.{ext}'
+    )
+    filename.replace("#", "__")
+    return filename
 
 
 def jid_to_abbr(j):
@@ -34,12 +55,13 @@ def pdfdata_to_text(data):
         return data.decode("utf8", "ignore")
 
 
-# def clean(text):
-#     text = text.replace("\xa0", " ")  # nbsp -> sp
-#     text = text.replace("\r\n", "\n")  # replace carriage returns
-#     text = re.sub(r"[ \t]", " ", text)  # collapse spaces
-#     # collapse newlines too?
-#     return text
+def clean(text):
+    text = text.replace("\xa0", " ")  # nbsp -> sp
+    text = text.replace("\r\n", "\n")  # replace carriage returns
+    text = re.sub(r"[ \t]", " ", text)  # collapse spaces
+    text = re.sub(r"(\s*\n){2,}", "\n", text)  # Collapse multiple blank lines
+    return text
+
 
 
 def _text_near_line_numbers(lines, regex):
@@ -61,6 +83,9 @@ text_before_line_numbers = functools.partial(_text_near_line_numbers, regex=r"(.
 
 
 def text_from_element_lxml(data, lxml_query):
+    # parser = lxml.etree.XMLParser(remove_blank_text=True)
+    # doc = lxml.etree.fromstring(data, parser=parser)
+    # data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.findall(lxml_query)
 
@@ -74,6 +99,12 @@ def text_from_element_lxml(data, lxml_query):
 
 
 def text_from_element_xpath(data, lxml_xpath_query):
+    try:
+        parser = lxml.etree.XMLParser(remove_blank_text=True)
+        doc = lxml.etree.fromstring(data, parser=parser)
+        data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
+    except Exception:
+        pass
     html_document = html.fromstring(data)
     matching_elements = html_document.xpath(lxml_xpath_query)
 
@@ -87,6 +118,9 @@ def text_from_element_xpath(data, lxml_xpath_query):
 
 
 def text_from_element_siblings_lxml(data, lxml_query):
+    # parser = lxml.etree.XMLParser(remove_blank_text=True)
+    # doc = lxml.etree.fromstring(data, parser=parser)
+    # data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.findall(lxml_query)
 
@@ -98,6 +132,9 @@ def text_from_element_siblings_lxml(data, lxml_query):
 
 
 def text_from_element_siblings_xpath(data, lxml_query):
+    # parser = lxml.etree.XMLParser(remove_blank_text=True)
+    # doc = lxml.etree.fromstring(data, parser=parser)
+    # data = lxml.etree.tostring(doc, encoding="unicode", pretty_print=True)
     html_document = html.fromstring(data)
     matching_elements = html_document.xpath(lxml_query)
 
