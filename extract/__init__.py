@@ -1,3 +1,4 @@
+from .ca import handle_california_pdf
 from .utils import jid_to_abbr
 from .common import (
     extract_simple_pdf,
@@ -32,7 +33,8 @@ CONVERSION_FUNCTIONS = {
     "ca": {
         "text/html": extractor_for_element_by_xpath(
             './/div[@id="bill"] | .//span[@class="Resolution"]'
-        )
+        ),
+        "application/pdf": handle_california_pdf,
     },
     "co": {"application/pdf": extract_sometimes_numbered_pdf},
     "ct": {"text/html": extract_from_p_tags_html, "application/pdf": DoNotDownload},
