@@ -1,6 +1,7 @@
 import re
 
 
+
 # Large bills only
 class Title:
     def __init__(self, order, text=None):
@@ -45,9 +46,20 @@ class Section:
         self.generator = self.counter()
         self.subsections = None
         self.text = [text]
+
+    def __str__(self):
+        return (f"Section {self.order}" if self.order > 0 else "Heading")
     
     def counter(self):
-        return (char for char in "abcdefghijklmnopqrstuvwxyz")
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+        self.j = 1
+        self.i = [0]
+        while True:
+            yield "".join(self.alphabet[char] for char in self.i)
+            self.i[-1] += 1
+            if self.i[-1] % 26 == 0:
+                self.j += 1
+                self.i = [0]*self.j
 
 class Subsection:
     def __init__(self, order, text=None):
@@ -70,7 +82,15 @@ class Paragraph:
         self.text = [text]
 
     def counter(self):
-        return (char for char in "abcdefghijklmnopqrstuvwxyz".upper())
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
+        self.j = 1
+        self.i = [0]
+        while True:
+            yield "".join(self.alphabet[char].upper() for char in self.i)
+            self.i[-1] += 1
+            if self.i[-1] % 26 == 0:
+                self.j += 1
+                self.i = [0]*self.j
 
 class Subparagraph:
     def __init__(self, order, text=None):
@@ -152,22 +172,14 @@ class Subclause:
         self.text = [text]
 
 class BillText:
-    """Class representing the text of a bill.
-    Attributes:
-        Sections   
-        Titles 
-
-    Each attribute is a class itself, with attributes:
-        text : the text between that heading and the next heading of the same type 
-        order : ordinal number of that heading (relative to others of its type)
-        the next highest organizational structure in a bill (except for Subclause).
     """
-    def __init__(self, name, text):
-        self.name = name
+    """
+    def __init__(self, text):
+        # self.name = name
         self.raw_text = text
         self.text = [str(text)]
         self.titles = None
-        self.sections = None
+        self.sublayers = []
         self.generator = self.counter()
         self.expr = {
             Title :         r"\({}\)",
@@ -177,8 +189,8 @@ class BillText:
             Part :          r"\({}\)",
             Subpart :       r"\({}\)",
             Section :       r"\s*SECTION *{}\.?\s*",
-            Subsection :    r"^[\d\.\t ]*\({}\)",
-            Paragraph :     r"^[\t ]*\({}\)",
+            Subsection :    r"\({}\)",
+            Paragraph :     r"\({}\)",
             Subparagraph :  r"\({}\)",
             Clause :        r"\({}\)",
             Subclause :     r"\({}\)"
@@ -190,67 +202,48 @@ class BillText:
             yield self.i
             self.i += 1
 
+    def lsplit(self, outer, inner):
+        """Splits a layer (outer), giving it sublayer attributes (inner).
+        """
+        # If text attribute has been changed to str, enclose it in a list for splitting
+        if type(outer.text) is str:
+            outer.text = [outer.text]
+
+        outer.current = next(outer.generator)
+        div = re.split(self.expr[inner].format(outer.current), outer.text[-1], maxsplit=1)
+        while len(div) == 2:
+            outer.text = outer.text[:-1] + div 
+            outer.current = next(outer.generator)
+            div = re.split(self.expr[inner].format(outer.current), outer.text[-1], maxsplit=1)
+        outer.sublayers = [inner(i, text) for i, text in enumerate(self.text)]
+
+        # Now for printing, convert back to string
+        # outer.text = outer.text[0]
+
+
     def format_text(self):
         """Formats text accordering to bill headings for readability."""
         #TODO: Check for title headings (large bills)
 
-        # Split bill by sections
-        if self.titles is None:
-            self.current = next(self.generator)
-            div = re.split(self.expr[Section].format(self.current), self.text[-1], maxsplit=1)
-            while len(div) == 2:
-                div = re.split(self.expr[Section].format(self.current), self.text[-1], maxsplit=1)
-                self.text = self.text[:-1] + div 
-                self.current = next(self.generator)
-            self.sections = [Section(i, text) for i, text in enumerate(self.text)]
-        
+        # Split bill by section
+        self.lsplit(self, Section)
+
         # Split each section by subsection
-        for sec in self.sections:
-            sec.current = next(sec.generator)
-            div = re.split(self.expr[Subsection].format(sec.current), sec.text[-1], maxsplit=1)
-            while len(div) == 2:
-                div = re.split(self.expr[Subsection].format(sec.current), sec.text[-1], maxsplit=1)
-                sec.text = sec.text[:-1] + div
-                sec.current = next(sec.generator)
-            sec.subsections = [Subsection(i, text) for i, text in enumerate(sec.text)]
+        for sec in self.sublayers:
+            self.lsplit(sec, Subsection)
 
             # Split each subsection by paragraph
-            for subsection in sec.subsections:
-                subsection.current = next(subsection.generator)
-                div = re.split(self.expr[Paragraph].format(subsection.current), subsection.text[-1], maxsplit=1)
-                while len(div) == 2:
-                    div = re.split(self.expr[Paragraph].format(subsection.current), subsection.text[-1], maxsplit=1)
-                    subsection.text = subsection.text[:-1] + div
-                    subsection.current = next(subsection.generator)
-                subsection.paragraphs = [Paragraph(i, text) for i, text in enumerate(subsection.text)]
+            for subsection in sec.sublayers:
+                self.lsplit(subsection, Paragraph)
 
                 # Split each paragraph by subparagraph
-                for paragraph in subsection.paragraphs:
-                    paragraph.current = next(paragraph.generator)
-                    div = re.split(self.expr[Subparagraph].format(paragraph.current), paragraph.text[-1], maxsplit=1)
-                    while len(div) == 2:
-                        div = re.split(self.expr[Subparagraph].format(paragraph.current), paragraph.text[-1], maxsplit=1)
-                        paragraph.text = paragraph.text[:-1] + div
-                        paragraph.current = next(paragraph.generator)
-                    paragraph.subparagraphs = [Subparagraph(i, text) for i, text in enumerate(paragraph.text)]
+                for par in subsection.sublayers:
+                    self.lsplit(par, Subparagraph)
 
-                    # Split each subparagraph by clause
-                    for subparagraph in paragraph.subparagraphs:
-                        subparagraph.current = next(subparagraph.generator)
-                        div = re.split(self.expr[Clause].format(subparagraph.current), subparagraph.text[-1], maxsplit=1)
-                        while len(div) == 2:
-                            div = re.split(self.expr[Clause].format(subparagraph.current), subparagraph.text[-1], maxsplit=1)
-                            subparagraph.text = paragraph.text[:-1] + div
-                            subparagraph.current = next(subparagraph.generator)
-                        subparagraph.clauses = [Clause(i, text) for i, text in enumerate(subparagraph.text)]
+        #             # Split each subparagraph by clause
+        #             for subpar in par.sublayers:
+        #                 self.lsplit(subpar, Clause)
 
                         # Split each clause by subclause
-                        for clause in subparagraph.clauses:
-                            clause.current = next(clause.generator)
-                            div = re.split(self.expr[Subclause].format(clause.current), clause.text[-1], maxsplit=1)
-                            while len(div) == 2:
-                                div = re.split(self.expr[Subclause].format(clause.current), clause.text[-1], maxsplit=1)
-                                clause.text = clause.text[:-1] + div
-                                clause.current = next(clause.generator)
-                            clause.subclauses = [Subclause(i, text) for i, text in enumerate(clause.text)]
- 
+                        # for clause in subpar.sublayers:
+                        #     self.lsplit(clause, Subclause)
