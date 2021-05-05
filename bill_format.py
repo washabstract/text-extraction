@@ -218,8 +218,7 @@ class BillText:
         outer.sublayers = [inner(i, text) for i, text in enumerate(self.text)]
 
         # Now for printing, convert back to string
-        # outer.text = outer.text[0]
-
+        outer.text_full = ''.join(outer.text)
 
     def format_text(self):
         """Formats text accordering to bill headings for readability."""
@@ -240,9 +239,9 @@ class BillText:
                 for par in subsection.sublayers:
                     self.lsplit(par, Subparagraph)
 
-        #             # Split each subparagraph by clause
-        #             for subpar in par.sublayers:
-        #                 self.lsplit(subpar, Clause)
+                    # Split each subparagraph by clause
+                    for subpar in par.sublayers:
+                        self.lsplit(subpar, Clause)
 
                         # Split each clause by subclause
                         # for clause in subpar.sublayers:
