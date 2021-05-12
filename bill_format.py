@@ -1,55 +1,43 @@
 import re
 
 
-
-# Large bills only
-class Title:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.subtitles = None
-        self.text = [text]
-
-class Subtitle:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.chapters = None
-        self.text = [text]
-
-class Chapter:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.subchapters = None
-        self.text = [text]
-
-class Subchapter:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.parts = None
-        self.text = [text]
-
-class Part:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.subparts = None
-        self.text = [text]
-
-class Subpart:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.sections = None
-        self.text = [text]
-
-# All bills
-class Section:
+class Layer:
     def __init__(self, order, text=None):
         self.order = order
         self.generator = self.counter()
-        self.subsections = None
+        self.sublayers = []
         self.text = [text]
+        self.full_text = "error: not set" + self.text[0]
+        self.label = self.make_label()
 
     def __str__(self):
+        if self.sublayers == []:
+            return self.label + "\n\n" + self.full_text
+        else:
+            return self.label + "\t" + "\n\n".join([sl.__str__() for sl in self.sublayers])
+
+    def make_label(self):
+        tempgen = self.counter()
+        k = 0
+        for _ in range(self.order):
+            k = next(tempgen)
+        return k
+
+    def counter(self): # Virtual
+        raise NotImplementedError
+
+
+# Large bills only
+# End large bills only
+
+# All bills
+class Section(Layer):
+    def __repr__(self):
         return (f"Section {self.order}" if self.order > 0 else "Heading")
     
+    def __str__(self):
+        pass
+
     def counter(self):
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
         self.j = 1
@@ -61,26 +49,14 @@ class Section:
                 self.j += 1
                 self.i = [0]*self.j
 
-class Subsection:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.generator = self.counter()
-        self.paragraphs = None
-        self.text = [text]
-
+class Subsection(Layer):
     def counter(self):
         self.i = 1
         while True:
             yield self.i
             self.i += 1
 
-class Paragraph:
-    def __init__(self, order, text=None):
-        self.order = order
-        self.generator = self.counter()
-        self.subparagraphs = None
-        self.text = [text]
-
+class Paragraph(Layer):
     def counter(self):
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
         self.j = 1
@@ -92,12 +68,8 @@ class Paragraph:
                 self.j += 1
                 self.i = [0]*self.j
 
-class Subparagraph:
+class Subparagraph(Layer):
     def __init__(self, order, text=None):
-        self.order = order
-        self.generator = self.counter()
-        self.clauses = None
-        self.text = [text]
         self.ROMAN = [
             (1000, "M"),
             ( 900, "CM"),
@@ -113,6 +85,7 @@ class Subparagraph:
             (   4, "IV"),
             (   1, "I"),
         ]
+        super().__init__(order, text)
 
     def counter(self):
         self.i = 1
@@ -129,12 +102,8 @@ class Subparagraph:
                 break
         return "".join(result)
 
-class Clause:
+class Clause(Layer):
     def __init__(self, order, text=None):
-        self.order = order
-        self.generator = self.counter()
-        self.subclauses = None
-        self.text = [text]
         self.ROMAN = [
             (1000, "M"),
             ( 900, "CM"),
@@ -150,6 +119,7 @@ class Clause:
             (   4, "IV"),
             (   1, "I"),
         ]
+        super().__init__(order, text)
 
     def counter(self):
         self.i = 1
@@ -166,12 +136,15 @@ class Clause:
                 break
         return "".join(result)
 
-class Subclause:
+class Subclause(Layer):
     def __init__(self, order, text=None):
         self.order = order
         self.text = [text]
+        self.sublayers = []
+        # self.label = self.make_label()
+        self.label = "no label"
 
-class BillText:
+class BillText(Layer):
     """
     """
     def __init__(self, text):
@@ -181,13 +154,14 @@ class BillText:
         self.titles = None
         self.sublayers = []
         self.generator = self.counter()
+        self.label = ""
         self.expr = {
-            Title :         r"\({}\)",
-            Subtitle :      r"\({}\)",
-            Chapter :       r"\({}\)",
-            Subchapter :    r"\({}\)",
-            Part :          r"\({}\)",
-            Subpart :       r"\({}\)",
+            # Title :         r"\({}\)",
+            # Subtitle :      r"\({}\)",
+            # Chapter :       r"\({}\)",
+            # Subchapter :    r"\({}\)",
+            # Part :          r"\({}\)",
+            # Subpart :       r"\({}\)",
             Section :       r"\s*SECTION *{}\.?\s*",
             Subsection :    r"\({}\)",
             Paragraph :     r"\({}\)",
@@ -195,6 +169,17 @@ class BillText:
             Clause :        r"\({}\)",
             Subclause :     r"\({}\)"
         }
+
+    def __str__(self):
+        self.format_text()
+        if len(self.sublayers) < 2:
+            return self.label + "\n\n" + self.full_text
+        else:
+            # try:
+            #     return self.label + "\t" + "\n\n".join([sl.__str__() for sl in self.sublayers])
+            # except:
+            #     return f"Self is {self}, with sublayers {self.sublayers}"
+            return f"self is {self} with sublayers {self.sublayers}"
 
     def counter(self):
         self.i = 1
@@ -218,7 +203,7 @@ class BillText:
         outer.sublayers = [inner(i, text) for i, text in enumerate(self.text)]
 
         # Now for printing, convert back to string
-        outer.text_full = ''.join(outer.text)
+        outer.full_text = ''.join(outer.text)
 
     def format_text(self):
         """Formats text accordering to bill headings for readability."""
@@ -244,5 +229,10 @@ class BillText:
                         self.lsplit(subpar, Clause)
 
                         # Split each clause by subclause
-                        # for clause in subpar.sublayers:
-                        #     self.lsplit(clause, Subclause)
+                        for clause in subpar.sublayers:
+                            self.lsplit(clause, Subclause)
+
+    def write(self, fname):
+        with open(fname, 'w') as fout:
+            fout.write(self.__str__())
+                                    
